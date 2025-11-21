@@ -11,10 +11,11 @@ Model name is converted to lowercase for the collection name:
 - BlogPost -> "blogs" collection
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
+import datetime as dt
 
-# Example schemas (replace with your own):
+# Example schemas (kept for reference):
 
 class User(BaseModel):
     """
@@ -38,11 +39,36 @@ class Product(BaseModel):
     category: str = Field(..., description="Product category")
     in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+# Flight booking app schemas
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class FlightSegment(BaseModel):
+    flight_number: str
+    airline: str
+    origin: str
+    destination: str
+    departure_time: str  # ISO string
+    arrival_time: str    # ISO string
+    duration_minutes: int
+    status: Optional[str] = None
+
+class FlightSearchRequest(BaseModel):
+    origin: str = Field(..., min_length=3, max_length=4, description="IATA code of origin (e.g., SFO)")
+    destination: str = Field(..., min_length=3, max_length=4, description="IATA code of destination (e.g., JFK)")
+    travel_date: dt.date = Field(..., alias='date', description="Departure date")
+    passengers: int = Field(1, ge=1, le=9, description="Number of passengers")
+
+class Booking(BaseModel):
+    """
+    Flight bookings collection schema
+    Collection name: "booking"
+    """
+    customer_name: str
+    customer_email: EmailStr
+    passengers: int = Field(1, ge=1, le=9)
+    origin: str = Field(..., min_length=3, max_length=4)
+    destination: str = Field(..., min_length=3, max_length=4)
+    travel_date: dt.date = Field(..., alias='date')
+    flight_number: str
+    airline: str
+    price_total: float = Field(..., ge=0)
+    segments: Optional[List[FlightSegment]] = None
